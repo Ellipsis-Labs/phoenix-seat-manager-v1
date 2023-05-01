@@ -1,0 +1,48 @@
+[package]
+name = "phoenix-seat-manager"
+version = "0.1.0"
+edition = "2021"
+repository = "https://github.com/Ellipsis-Labs/phoenix-seat-manager-v1"
+authors = ["Ellipsis Labs <maintainers@ellipsislabs.xyz>"]
+description = "Automatic seat manager for the Phoenix program"
+license-file = "LICENSE"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "phoenix_seat_manager"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+test = []
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+overflow-checks = true
+
+[dependencies]
+phoenix-v1 = { version = "0.2.2", features = [ "no-entrypoint" ] }
+shank = "=0.0.12"
+solana-program = "=1.14.9"
+bytemuck = "=1.13.0"
+borsh = "=0.9.3"
+lib-sokoban = "=0.3.0" 
+num_enum = "=0.5.9"
+itertools = "=0.10.5"
+thiserror = "=1.0.38"
+ellipsis-macros = "=0.1.1" 
+solana-security-txt = "=1.1.0"
+static_assertions = "=1.1.0"
+spl-token = { version = "=3.5.0", features = ["no-entrypoint"] }
+spl-associated-token-account = { version = "=1.1.1", features = [ "no-entrypoint" ] } 
+
+[dev-dependencies]
+rand = "0.7.3"
+ellipsis-client = "0.1.17"
+tokio = { version = "1.8.4", features = ["full"] }
+solana-sdk = "=1.14.9"
+phoenix-sdk = { git = "https://github.com/Ellipsis-Labs/phoenix-sdk", branch = "master" }

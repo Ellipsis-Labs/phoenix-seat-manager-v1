@@ -1,0 +1,625 @@
+{
+  "version": "0.1.0",
+  "name": "phoenix_seat_manager",
+  "instructions": [
+    {
+      "name": "ClaimMarketAuthority",
+      "accounts": [
+        {
+          "name": "phoenixProgram",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "Phoenix program"
+        },
+        {
+          "name": "logAuthority",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "Phoenix log authority"
+        },
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": false,
+          "desc": "This account holds the market state"
+        },
+        {
+          "name": "seatManager",
+          "isMut": true,
+          "isSigner": false,
+          "desc": "The seat manager account must sign to claim authority"
+        },
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true,
+          "desc": "Payer account"
+        },
+        {
+          "name": "seatDepositCollector",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "Collects deposits for claiming new seats and refunds for evicting seats"
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "System program"
+        }
+      ],
+      "args": [],
+      "discriminant": {
+        "type": "u8",
+        "value": 0
+      }
+    },
+    {
+      "name": "ClaimSeat",
+      "accounts": [
+        {
+          "name": "phoenixProgram",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "Phoenix program"
+        },
+        {
+          "name": "logAuthority",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "Phoenix log authority"
+        },
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": false,
+          "desc": "This account holds the market state"
+        },
+        {
+          "name": "seatManager",
+          "isMut": true,
+          "isSigner": false,
+          "desc": "The seat manager account is the market authority"
+        },
+        {
+          "name": "seatDepositCollector",
+          "isMut": true,
+          "isSigner": false,
+          "desc": "Collects deposits for claiming new seats and refunds for evicting seats"
+        },
+        {
+          "name": "trader",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "seat",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "System program"
+        }
+      ],
+      "args": [],
+      "discriminant": {
+        "type": "u8",
+        "value": 1
+      }
+    },
+    {
+      "name": "ClaimSeatAuthorized",
+      "accounts": [
+        {
+          "name": "phoenixProgram",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "Phoenix program"
+        },
+        {
+          "name": "logAuthority",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "Phoenix log authority"
+        },
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": false,
+          "desc": "This account holds the market state"
+        },
+        {
+          "name": "seatManager",
+          "isMut": true,
+          "isSigner": false,
+          "desc": "The seat manager account is the market authority"
+        },
+        {
+          "name": "seatDepositCollector",
+          "isMut": true,
+          "isSigner": false,
+          "desc": "Collects deposits for claiming new seats and refunds for evicting seats"
+        },
+        {
+          "name": "trader",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "seatManagerAuthority",
+          "isMut": true,
+          "isSigner": true,
+          "desc": "The seat manager authority account must sign to claim seat"
+        },
+        {
+          "name": "seat",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "System program"
+        }
+      ],
+      "args": [],
+      "discriminant": {
+        "type": "u8",
+        "value": 2
+      }
+    },
+    {
+      "name": "EvictSeat",
+      "accounts": [
+        {
+          "name": "phoenixProgram",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "Phoenix program"
+        },
+        {
+          "name": "logAuthority",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "Phoenix log authority"
+        },
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": false,
+          "desc": "This account holds the market state"
+        },
+        {
+          "name": "seatManager",
+          "isMut": true,
+          "isSigner": false,
+          "desc": "The seat manager account must sign to evict a seat"
+        },
+        {
+          "name": "seatDepositCollector",
+          "isMut": true,
+          "isSigner": false,
+          "desc": "Collects deposits for claiming new seats and refunds for evicting seats"
+        },
+        {
+          "name": "baseMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "quoteMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "baseVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "quoteVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenAccountProgram",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "Associated token account program"
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "Token program"
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "System program to handle refund transfers"
+        },
+        {
+          "name": "signer",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "trader",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "seat",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "The trader's PDA seat account, seeds are [b'seat', market_address, trader_address]"
+        },
+        {
+          "name": "baseAccount",
+          "isMut": true,
+          "isSigner": false,
+          "desc": "The trader's associated token account for the base mint"
+        },
+        {
+          "name": "quoteAccount",
+          "isMut": true,
+          "isSigner": false,
+          "desc": "The trader's associated token account for the quote mint"
+        },
+        {
+          "name": "baseAccountBackup",
+          "isMut": true,
+          "isSigner": false,
+          "desc": "Non-ATA token account for the base mint, in case the ATA owner is no longer the trader"
+        },
+        {
+          "name": "quoteAccountBackup",
+          "isMut": true,
+          "isSigner": false,
+          "desc": "Non-ATA token account for the quote mint, in case the ATA owner is no longer the trader"
+        }
+      ],
+      "args": [],
+      "discriminant": {
+        "type": "u8",
+        "value": 3
+      }
+    },
+    {
+      "name": "AddDesignatedMarketMaker",
+      "accounts": [
+        {
+          "name": "market",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "This account holds the market state"
+        },
+        {
+          "name": "seatManager",
+          "isMut": true,
+          "isSigner": false,
+          "desc": "This account holds the seat manager state"
+        },
+        {
+          "name": "trader",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "seatManagerAuthority",
+          "isMut": false,
+          "isSigner": true,
+          "desc": "The seat manager account must sign to create a DMM"
+        }
+      ],
+      "args": [],
+      "discriminant": {
+        "type": "u8",
+        "value": 4
+      }
+    },
+    {
+      "name": "RemoveDesignatedMarketMaker",
+      "accounts": [
+        {
+          "name": "market",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "This account holds the market state"
+        },
+        {
+          "name": "seatManager",
+          "isMut": true,
+          "isSigner": false,
+          "desc": "This account holds the seat manager state"
+        },
+        {
+          "name": "trader",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "seatManagerAuthority",
+          "isMut": false,
+          "isSigner": true,
+          "desc": "The seat manager authority account must sign to remove a DMM"
+        }
+      ],
+      "args": [],
+      "discriminant": {
+        "type": "u8",
+        "value": 5
+      }
+    },
+    {
+      "name": "NameSuccessor",
+      "accounts": [
+        {
+          "name": "seatManager",
+          "isMut": true,
+          "isSigner": false,
+          "desc": "This account holds the seat manager state"
+        },
+        {
+          "name": "seatManagerAuthority",
+          "isMut": false,
+          "isSigner": true,
+          "desc": "The seat manager account must sign name a successor"
+        },
+        {
+          "name": "successor",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "The new authority account"
+        }
+      ],
+      "args": [],
+      "discriminant": {
+        "type": "u8",
+        "value": 6
+      }
+    },
+    {
+      "name": "ClaimSeatManagerAuthority",
+      "accounts": [
+        {
+          "name": "seatManager",
+          "isMut": true,
+          "isSigner": false,
+          "desc": "This account holds the seat manager state"
+        },
+        {
+          "name": "successor",
+          "isMut": false,
+          "isSigner": true,
+          "desc": "The successor account must sign to claim authority"
+        }
+      ],
+      "args": [],
+      "discriminant": {
+        "type": "u8",
+        "value": 7
+      }
+    },
+    {
+      "name": "ChangeMarketStatus",
+      "accounts": [
+        {
+          "name": "phoenixProgram",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "Phoenix program"
+        },
+        {
+          "name": "logAuthority",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "Phoenix log authority"
+        },
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": false,
+          "desc": "This account holds the market state"
+        },
+        {
+          "name": "seatManager",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "This account holds the seat manager state"
+        },
+        {
+          "name": "seatManagerAuthority",
+          "isMut": false,
+          "isSigner": true,
+          "desc": "The seat manager account must sign change market status"
+        }
+      ],
+      "args": [
+        {
+          "name": "marketStatus",
+          "type": {
+            "defined": "MarketStatus"
+          }
+        }
+      ],
+      "discriminant": {
+        "type": "u8",
+        "value": 8
+      }
+    },
+    {
+      "name": "NameMarketAuthoritySuccessor",
+      "accounts": [
+        {
+          "name": "phoenixProgram",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "Phoenix program"
+        },
+        {
+          "name": "logAuthority",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "Phoenix log authority"
+        },
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": false,
+          "desc": "This account holds the market state"
+        },
+        {
+          "name": "seatManager",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "This account holds the seat manager state"
+        },
+        {
+          "name": "seatManagerAuthority",
+          "isMut": false,
+          "isSigner": true,
+          "desc": "The seat manager authority must sign to name a new market authority successor"
+        }
+      ],
+      "args": [
+        {
+          "name": "successor",
+          "type": "publicKey"
+        }
+      ],
+      "discriminant": {
+        "type": "u8",
+        "value": 9
+      }
+    },
+    {
+      "name": "ChangeMarketFeeRecipient",
+      "accounts": [
+        {
+          "name": "phoenixProgram",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "Phoenix program"
+        },
+        {
+          "name": "logAuthority",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "Phoenix log authority"
+        },
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": false,
+          "desc": "This account holds the market state"
+        },
+        {
+          "name": "seatManager",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "This account holds the seat manager state"
+        },
+        {
+          "name": "seatManagerAuthority",
+          "isMut": false,
+          "isSigner": true,
+          "desc": "The seat manager authority must sign to change the fee recipient"
+        },
+        {
+          "name": "currentFeeRecipientQuoteTokenAccount",
+          "isMut": true,
+          "isSigner": false,
+          "desc": "The current fee recipient's quote token account"
+        },
+        {
+          "name": "quoteVault",
+          "isMut": true,
+          "isSigner": false,
+          "desc": "The quote vault account"
+        },
+        {
+          "name": "newFeeRecipient",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "Account to become the new recipient of fees"
+        },
+        {
+          "name": "splToken",
+          "isMut": false,
+          "isSigner": false,
+          "desc": "The SPL token program"
+        }
+      ],
+      "args": [],
+      "discriminant": {
+        "type": "u8",
+        "value": 10
+      }
+    },
+    {
+      "name": "ConfirmRenounceSeatManagerAuthority",
+      "accounts": [
+        {
+          "name": "seatManager",
+          "isMut": true,
+          "isSigner": false,
+          "desc": "This account holds the seat manager state"
+        },
+        {
+          "name": "seatManagerAuthority",
+          "isMut": false,
+          "isSigner": true,
+          "desc": "The seat manager authority must sign to renounce the seat manager authority"
+        }
+      ],
+      "args": [],
+      "discriminant": {
+        "type": "u8",
+        "value": 11
+      }
+    }
+  ],
+  "types": [
+    {
+      "name": "MarketStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Uninitialized"
+          },
+          {
+            "name": "Active"
+          },
+          {
+            "name": "PostOnly"
+          },
+          {
+            "name": "Paused"
+          },
+          {
+            "name": "Closed"
+          },
+          {
+            "name": "Tombstoned"
+          }
+        ]
+      }
+    }
+  ],
+  "metadata": {
+    "origin": "shank",
+    "address": "PSMxQbAoDWDbvd9ezQJgARyq6R9L5kJAasaLDVcZwf1"
+  }
+}
