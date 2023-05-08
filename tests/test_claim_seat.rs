@@ -62,7 +62,7 @@ async fn test_claim_seat_without_trader_as_signer_fails_and_with_signer_succeeds
 #[tokio::test]
 async fn test_claim_seat_authorized_happy_path() {
     let PhoenixTestClient {
-        ctx: _,
+        mut ctx,
         sdk,
         mint_authority,
     } = bootstrap_default(5).await;
@@ -99,6 +99,20 @@ async fn test_claim_seat_authorized_happy_path() {
     assert!(sdk
         .client
         .sign_send_instructions(vec![limit_order_ix], vec![&trader])
+        .await
+        .is_ok());
+
+    ctx.warp_to_slot(1203942).unwrap();
+
+    let claim_seat_ix = create_claim_seat_authorized_instruction(
+        &trader.pubkey(),
+        &sdk.active_market_key,
+        &sdk.client.payer.pubkey(),
+    );
+
+    assert!(sdk
+        .client
+        .sign_send_instructions(vec![claim_seat_ix], vec![])
         .await
         .is_ok());
 }
