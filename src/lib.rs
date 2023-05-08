@@ -1,6 +1,5 @@
 use ellipsis_macros::declare_id;
 use instruction::SeatManagerInstruction;
-use phoenix::program::assert_with_msg;
 use processor::{
     process_change_market_status, process_claim_market_authority, process_claim_seat,
     process_claim_seat_manager_authority, process_confirm_renounce_seat_manager_authority,
@@ -59,15 +58,19 @@ pub fn get_seat_manager_seeds(
         program_id,
     );
     seeds.push(vec![bump]);
-    assert_with_msg(
-        seat_manager_key == *seat_manager,
-        ProgramError::InvalidInstructionData,
-        &format!(
-            "Invalid seat manager key, expected: {} found {}",
-            seat_manager_key, seat_manager
-        ),
-    )?;
-    Ok(seeds)
+
+    if seat_manager_key == *seat_manager {
+        Ok(seeds)
+    } else {
+        let caller = std::panic::Location::caller();
+        msg!(
+            "Invalid seat manager key, expected: {} found {}.\n{}",
+            seat_manager_key,
+            seat_manager,
+            caller
+        );
+        return Err(ProgramError::InvalidInstructionData.into());
+    }
 }
 
 pub fn get_seat_manager_address(market: &Pubkey) -> (Pubkey, u8) {
@@ -89,15 +92,19 @@ pub fn get_seat_deposit_collector_seeds(
         program_id,
     );
     seeds.push(vec![bump]);
-    assert_with_msg(
-        seat_deposit_collector_key == *seat_deposit_collector,
-        ProgramError::InvalidInstructionData,
-        &format!(
-            "Invalid seat deposit collector key, expected: {} found {}",
-            seat_deposit_collector_key, seat_deposit_collector
-        ),
-    )?;
-    Ok(seeds)
+
+    if seat_deposit_collector_key == *seat_deposit_collector {
+        Ok(seeds)
+    } else {
+        let caller = std::panic::Location::caller();
+        msg!(
+            "Invalid seat deposit collector key, expected: {} found {}.\n{}",
+            seat_deposit_collector_key,
+            seat_deposit_collector,
+            caller
+        );
+        return Err(ProgramError::InvalidInstructionData.into());
+    }
 }
 
 pub fn get_seat_deposit_collector_address(market: &Pubkey) -> (Pubkey, u8) {

@@ -29,17 +29,26 @@ pub fn process_claim_seat(
     authorized: bool,
 ) -> ProgramResult {
     let market_ai = MarketAccount::new(&accounts[2])?;
+    let trader_ai = &accounts[5];
+    let seat_ai = PDA::new(
+        &accounts[7],
+        &get_seat_address(market_ai.key, trader_ai.key).0,
+    )?;
+    if !seat_ai.data_is_empty() {
+        // If the seat is already Approved and exists on the market, we can return Ok(())
+        let seat_data = &seat_ai.try_borrow_data()?;
+        let seat_struct = bytemuck::from_bytes::<Seat>(&seat_data);
+        if SeatApprovalStatus::from(seat_struct.approval_status) == SeatApprovalStatus::Approved {
+            return Ok(());
+        }
+    }
+
     let seat_manager = SeatManagerAccount::new_with_market(&accounts[3], market_ai.key)?;
     let seat_deposit_collector = PDA::new(
         &accounts[4],
         &get_seat_deposit_collector_address(market_ai.key).0,
     )?;
-    let trader_ai = &accounts[5];
     let payer = Signer::new(&accounts[6])?;
-    let seat_ai = PDA::new(
-        &accounts[7],
-        &get_seat_address(market_ai.key, trader_ai.key).0,
-    )?;
 
     if !authorized {
         assert_with_msg(
@@ -72,13 +81,6 @@ pub fn process_claim_seat(
                 .collect::<Vec<&[u8]>>()
                 .as_slice()],
         )?;
-    } else {
-        // If the seat is already Approved and exists on the market, we can return Ok(())
-        let seat_data = &seat_ai.try_borrow_data()?;
-        let seat_struct = bytemuck::from_bytes::<Seat>(&seat_data);
-        if SeatApprovalStatus::from(seat_struct.approval_status) == SeatApprovalStatus::Approved {
-            return Ok(());
-        }
     }
 
     // A deposit equal to the rent of two token accounts is required to mitigate closing of token accounts prior to eviction.
