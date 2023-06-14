@@ -4,7 +4,7 @@ Phoenix Seat Manager is an on-chain program which automatically manages seats fo
 
 ### Documentation
 
-Documentation and instructions on how to interact with the program are available on [GitBook](https://ellipsis-labs.gitbook.io/phoenix-dex/tRIkEFlLUzWK9uKO3W2V/getting-started/phoenix-overview).
+Documentation and instructions on how to interact with the program are available on [GitBook](https://ellipsis-labs.gitbook.io/phoenix-dex/tRIkEFlLUzWK9uKO3W2V/getting-started/technical-overview/seats/phoenix-seat-manager-program).
 
 ### Licensing
 
@@ -12,7 +12,7 @@ The primary license for Phoenix Seat Manager is the Business Source License 1.1 
 
 ### Audits
 
-Phoenix Seat Manager has been audited by OtterSec. The audit report can be found [here](https://github.com/Ellipsis-Labs/phoenix-v1/blob/master/audits/OtterSec.pdf).
+Phoenix Seat Manager has been audited by OtterSec. The audit report is coming soon.
 
 ### Building and Testing Locally
 
