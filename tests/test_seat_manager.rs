@@ -1,4 +1,6 @@
 use ellipsis_client::program_test::*;
+use phoenix::program::create_deposit_funds_instruction;
+use phoenix::program::deposit::DepositParams;
 use phoenix_seat_manager::instruction_builders::create_claim_seat_instruction;
 use phoenix_seat_manager::instruction_builders::create_evict_seat_instruction;
 use phoenix_seat_manager::instruction_builders::EvictTraderAccountBackup;
@@ -11,6 +13,7 @@ use solana_sdk::signature::{Keypair, Signer};
 mod setup;
 use crate::setup::helpers::airdrop;
 use crate::setup::init::bootstrap_default;
+use crate::setup::init::setup_account;
 use crate::setup::init::PhoenixTestClient;
 
 const NUM_SEATS: usize = 1153;
@@ -22,13 +25,13 @@ async fn test_seat_manager() {
     let PhoenixTestClient {
         ctx,
         sdk,
-        mint_authority: _,
+        mint_authority,
     } = bootstrap_default(0).await;
     // Create 30
     let mut market_traders = vec![];
     for i in 0..NUM_SEATS {
-        let t = Keypair::new();
-        airdrop(&sdk.client, &t.pubkey(), 100_000_000)
+        let t = setup_account(&sdk.client, &mint_authority, sdk.base_mint, sdk.quote_mint).await;
+        airdrop(&sdk.client, &t.user.pubkey(), 100_000_000)
             .await
             .unwrap();
         if i % 100 == 0 {
@@ -46,20 +49,21 @@ async fn test_seat_manager() {
             sdk.client
                 .sign_send_instructions(
                     vec![
+                        ComputeBudgetInstruction::set_compute_unit_limit(1_400_000),
                         system_instruction::transfer(
                             &sdk.client.payer.pubkey(),
-                            &t.pubkey(),
+                            &t.user.pubkey(),
                             1781760,
                         ),
                         create_evict_seat_instruction(
                             &sdk.active_market_key,
                             &sdk.base_mint,
                             &sdk.quote_mint,
-                            &t.pubkey(),
+                            &t.user.pubkey(),
                             sample,
                         ),
                     ],
-                    vec![&sdk.client.payer, &t],
+                    vec![&sdk.client.payer, &t.user],
                 )
                 .await
                 .unwrap();
@@ -69,25 +73,41 @@ async fn test_seat_manager() {
             assert!(traders.len() == i);
             println!("Created {} traders", i);
         }
+
+        let deposit_ix = create_deposit_funds_instruction(
+            &sdk.active_market_key,
+            &t.user.pubkey(),
+            &sdk.base_mint,
+            &sdk.quote_mint,
+            &DepositParams {
+                quote_lots_to_deposit: 1,
+                base_lots_to_deposit: 1,
+            },
+        );
         sdk.client
             .sign_send_instructions(
                 vec![
-                    system_instruction::transfer(&sdk.client.payer.pubkey(), &t.pubkey(), 1781760),
-                    spl_associated_token_account::instruction::create_associated_token_account(
+                    system_instruction::transfer(
                         &sdk.client.payer.pubkey(),
-                        &t.pubkey(),
+                        &t.user.pubkey(),
+                        1781760,
+                    ),
+                    spl_associated_token_account::instruction::create_associated_token_account_idempotent(
+                        &sdk.client.payer.pubkey(),
+                        &t.user.pubkey(),
                         &sdk.base_mint,
                         &spl_token::id(),
                     ),
-                    spl_associated_token_account::instruction::create_associated_token_account(
+                    spl_associated_token_account::instruction::create_associated_token_account_idempotent(
                         &sdk.client.payer.pubkey(),
-                        &t.pubkey(),
+                        &t.user.pubkey(),
                         &sdk.quote_mint,
                         &spl_token::id(),
                     ),
-                    create_claim_seat_instruction(&t.pubkey(), &sdk.active_market_key),
+                    create_claim_seat_instruction(&t.user.pubkey(), &sdk.active_market_key),
+                    deposit_ix,
                 ],
-                vec![&sdk.client.payer, &t],
+                vec![&sdk.client.payer, &t.user],
             )
             .await
             .unwrap();

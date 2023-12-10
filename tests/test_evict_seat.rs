@@ -1,10 +1,13 @@
 mod setup;
 
+use std::collections::HashSet;
 use std::mem::size_of;
 
 use crate::setup::init::bootstrap_default;
 use crate::setup::init::PhoenixTestClient;
 use crate::setup::init::{setup_account, NUM_SEATS};
+use phoenix::program::create_deposit_funds_instruction;
+use phoenix::program::deposit::DepositParams;
 use phoenix::program::load_with_dispatch;
 use phoenix::program::MarketHeader;
 use phoenix_seat_manager::get_seat_deposit_collector_address;
@@ -16,6 +19,8 @@ use phoenix_seat_manager::instruction_builders::{
     create_claim_seat_instruction, create_evict_seat_instruction,
 };
 use phoenix_seat_manager::seat_manager::SeatManager;
+use rand::thread_rng;
+use rand::Rng;
 use solana_program::program_pack::Pack;
 use solana_program::pubkey::Pubkey;
 use solana_program::rent::Rent;
@@ -93,6 +98,82 @@ async fn test_evict_seat_multiple_authorized() {
 }
 
 #[tokio::test]
+async fn test_evict_seat_permissionless_succeeds_when_evicting_empty_seats() {
+    let PhoenixTestClient {
+        ctx: _,
+        sdk,
+        mint_authority,
+    } = bootstrap_default(5).await;
+
+    let mut new_traders = vec![];
+    // Need to fill market with traders
+    let num_new_traders = NUM_SEATS / 2;
+    for _ in 0..num_new_traders {
+        let trader =
+            setup_account(&sdk.client, &mint_authority, sdk.base_mint, sdk.quote_mint).await;
+
+        let claim_seat = create_claim_seat_authorized_instruction(
+            &trader.user.pubkey(),
+            &sdk.active_market_key,
+            &sdk.client.payer.pubkey(),
+        );
+
+        let _ = sdk
+            .client
+            .sign_send_instructions(vec![claim_seat], vec![])
+            .await;
+        new_traders.push(trader);
+    }
+    // Evict two traders permissionless
+    let evictor = Keypair::new();
+
+    let mut rng = thread_rng();
+
+    let mut traders_to_evict = HashSet::new();
+    while traders_to_evict.len() < 5 {
+        let i = rng.gen_range(0, new_traders.len()) as usize;
+        if traders_to_evict.contains(&i) {
+            continue;
+        }
+        traders_to_evict.insert(i);
+    }
+
+    let evict_seats = create_evict_seat_instruction(
+        &sdk.active_market_key,
+        &sdk.base_mint,
+        &sdk.quote_mint,
+        &evictor.pubkey(),
+        traders_to_evict
+            .iter()
+            .map(|i| EvictTraderAccountBackup {
+                trader_pubkey: new_traders[*i].user.pubkey(),
+                base_token_account_backup: None,
+                quote_token_account_backup: None,
+            })
+            .collect(),
+    );
+
+    sdk.client
+        .sign_send_instructions(
+            vec![
+                ComputeBudgetInstruction::set_compute_unit_limit(1_400_000),
+                evict_seats,
+            ],
+            vec![&evictor],
+        )
+        .await
+        .unwrap();
+
+    // Assert that all traders were evicted
+    let traders = sdk.get_traders().await;
+    let eviction_successful = traders_to_evict
+        .iter()
+        .all(|i| traders.get(&new_traders[*i].user.pubkey()).is_none());
+
+    assert!(eviction_successful);
+}
+
+#[tokio::test]
 async fn test_evict_seat_permissionless_succeeds_when_full_and_only_evicts_one() {
     let PhoenixTestClient {
         ctx: _,
@@ -109,12 +190,34 @@ async fn test_evict_seat_permissionless_succeeds_when_full_and_only_evicts_one()
     let claim_seat_one =
         create_claim_seat_instruction(&trader_one.user.pubkey(), &sdk.active_market_key);
 
+    let deposit_one = create_deposit_funds_instruction(
+        &sdk.active_market_key,
+        &trader_one.user.pubkey(),
+        &sdk.base_mint,
+        &sdk.quote_mint,
+        &DepositParams {
+            quote_lots_to_deposit: 1,
+            base_lots_to_deposit: 1,
+        },
+    );
+
     let claim_seat_two =
         create_claim_seat_instruction(&trader_two.user.pubkey(), &sdk.active_market_key);
 
+    let deposit_two = create_deposit_funds_instruction(
+        &sdk.active_market_key,
+        &trader_two.user.pubkey(),
+        &sdk.base_mint,
+        &sdk.quote_mint,
+        &DepositParams {
+            quote_lots_to_deposit: 1,
+            base_lots_to_deposit: 1,
+        },
+    );
+
     sdk.client
         .sign_send_instructions(
-            vec![claim_seat_one, claim_seat_two],
+            vec![claim_seat_one, deposit_one, claim_seat_two, deposit_two],
             vec![&trader_one.user, &trader_two.user],
         )
         .await
