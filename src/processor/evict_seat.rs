@@ -258,7 +258,7 @@ pub fn process_evict_seat(program_id: &Pubkey, accounts: &[AccountInfo]) -> Prog
                     &evict_seat_cpi_context,
                 )?;
 
-                // If the signer is not fully authorized and if the currenly evicted seat is not empty, only one eviction is allowed at a time
+                // If the signer is not fully authorized and if the currently evicted seat is not empty, only one eviction is allowed at a time
                 if !is_fully_authorized && !seat_is_empty {
                     msg!("Successfully evicted 1 seat");
                     break;
