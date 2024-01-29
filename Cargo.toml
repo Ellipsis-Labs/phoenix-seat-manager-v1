@@ -1,6 +1,6 @@
 [package]
 name = "phoenix-seat-manager"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 repository = "https://github.com/Ellipsis-Labs/phoenix-seat-manager-v1"
 authors = ["Ellipsis Labs <maintainers@ellipsislabs.xyz>"]
