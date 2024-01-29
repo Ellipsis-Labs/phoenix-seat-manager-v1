@@ -159,7 +159,7 @@ pub fn process_evict_seat(program_id: &Pubkey, accounts: &[AccountInfo]) -> Prog
         if let Some(trader_state) =
             retrieve_trader_state(&market_ai, &market_size_params, trader_ai)?
         {
-            // If a trader has 0 balances in the Phoenix program, then anyone can remove it
+            // If a trader's seat has 0 locked base lots, 0 locked quote lots, 0 free base lots, and 0 free quote lots, then anyone can remove it
             let seat_is_empty = trader_state.base_lots_locked == 0
                 && trader_state.quote_lots_locked == 0
                 && trader_state.base_lots_free == 0
