@@ -117,7 +117,7 @@ pub fn process_evict_seat(program_id: &Pubkey, accounts: &[AccountInfo]) -> Prog
 
         let registered_traders = market.get_registered_traders();
 
-        // When this boolean is true, it gives the signer the privilege to evict any seat with 0 locked base lots and 0 locked quote lots
+        // When this boolean is true, signer has the privilege to evict any seat with 0 locked base lots and 0 locked quote lots
         let has_partial_eviction_privileges =
             registered_traders.capacity() == registered_traders.len() && !is_fully_authorized;
 
