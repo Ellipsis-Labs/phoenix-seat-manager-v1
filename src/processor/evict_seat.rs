@@ -3,7 +3,7 @@ use std::{mem::size_of, slice::Iter};
 use crate::{
     get_accounts_for_instruction, get_seat_deposit_collector_address,
     get_seat_deposit_collector_seeds,
-    loaders::{AssociatedTokenAccount, BackupTokenAccount, MarketAccount, SeatManagerAccount}
+    loaders::{AssociatedTokenAccount, BackupTokenAccount, MarketAccount, SeatManagerAccount},
 };
 use itertools::{Chunk, Itertools};
 use phoenix::{
@@ -99,7 +99,7 @@ pub fn process_evict_seat(program_id: &Pubkey, accounts: &[AccountInfo]) -> Prog
     let is_fully_authorized = *signer.key == seat_manager.load()?.authority;
 
     // Get market parameters to perform checks
-    let (base_mint, quote_mint, market_size_params) = {
+    let (base_mint, quote_mint, market_size_params, has_eviction_privileges) = {
         let market_bytes = market_ai.data.borrow();
         let (header_bytes, market_bytes) = market_bytes.split_at(size_of::<MarketHeader>());
         let market_header =
@@ -117,11 +117,9 @@ pub fn process_evict_seat(program_id: &Pubkey, accounts: &[AccountInfo]) -> Prog
 
         let registered_traders = market.get_registered_traders();
 
-        if registered_traders.capacity() != registered_traders.len() && !is_fully_authorized {
-            msg!("Permissionless evictions are only allowed when the market is full");
-            // Fail silently to allow atomic seat registration following eviction failure due to market not being full
-            return Ok(());
-        }
+        // When this boolean is true, signer has the privilege to evict any seat with 0 locked base lots and 0 locked quote lots
+        let has_eviction_privileges =
+            registered_traders.capacity() == registered_traders.len();
 
         assert_with_msg(
             base_mint_ai.info.key == &base_mint,
@@ -133,7 +131,12 @@ pub fn process_evict_seat(program_id: &Pubkey, accounts: &[AccountInfo]) -> Prog
             ProgramError::InvalidAccountData,
             "Quote mint mismatch",
         )?;
-        (base_mint, quote_mint, market_header.market_size_params)
+        (
+            base_mint,
+            quote_mint,
+            market_header.market_size_params,
+            has_eviction_privileges,
+        )
     };
 
     // Perform eviction for trader(s)
@@ -156,7 +159,19 @@ pub fn process_evict_seat(program_id: &Pubkey, accounts: &[AccountInfo]) -> Prog
         if let Some(trader_state) =
             retrieve_trader_state(&market_ai, &market_size_params, trader_ai)?
         {
-            if trader_state.base_lots_locked == 0 && trader_state.quote_lots_locked == 0 {
+            // If a trader's seat has 0 locked base lots, 0 locked quote lots, 0 free base lots, and 0 free quote lots, then anyone can remove it
+            let seat_is_empty = trader_state.base_lots_locked == 0
+                && trader_state.quote_lots_locked == 0
+                && trader_state.base_lots_free == 0
+                && trader_state.quote_lots_free == 0;
+
+            let can_evict_trader = if has_eviction_privileges || is_fully_authorized {
+                trader_state.base_lots_locked == 0 && trader_state.quote_lots_locked == 0
+            } else {
+                seat_is_empty
+            };
+
+            if can_evict_trader {
                 // Change seat status
                 change_seat_status_not_approved_cpi(
                     &market_ai,
@@ -205,7 +220,7 @@ pub fn process_evict_seat(program_id: &Pubkey, accounts: &[AccountInfo]) -> Prog
 
                 assert_with_msg(
                     total_trader_refund + total_signer_refund <= minimum_rent_for_token_account * 2,
-                    ProgramError::InvalidAccountData, 
+                    ProgramError::InvalidAccountData,
                     "Total refund cannot exceed rent for two token accounts. Check token account inputs."
                 )?;
 
@@ -243,8 +258,8 @@ pub fn process_evict_seat(program_id: &Pubkey, accounts: &[AccountInfo]) -> Prog
                     &evict_seat_cpi_context,
                 )?;
 
-                // If the signer is not fully authorized, only one eviction is allowed at a time
-                if !is_fully_authorized {
+                // If the signer is not fully authorized and if the currently evicted seat is not empty, only one eviction is allowed at a time
+                if !is_fully_authorized && !seat_is_empty {
                     msg!("Successfully evicted 1 seat");
                     break;
                 }
