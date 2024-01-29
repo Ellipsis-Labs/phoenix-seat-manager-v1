@@ -99,7 +99,7 @@ pub fn process_evict_seat(program_id: &Pubkey, accounts: &[AccountInfo]) -> Prog
     let is_fully_authorized = *signer.key == seat_manager.load()?.authority;
 
     // Get market parameters to perform checks
-    let (base_mint, quote_mint, market_size_params, has_partial_eviction_privileges) = {
+    let (base_mint, quote_mint, market_size_params, has_eviction_privileges) = {
         let market_bytes = market_ai.data.borrow();
         let (header_bytes, market_bytes) = market_bytes.split_at(size_of::<MarketHeader>());
         let market_header =
@@ -118,8 +118,8 @@ pub fn process_evict_seat(program_id: &Pubkey, accounts: &[AccountInfo]) -> Prog
         let registered_traders = market.get_registered_traders();
 
         // When this boolean is true, signer has the privilege to evict any seat with 0 locked base lots and 0 locked quote lots
-        let has_partial_eviction_privileges =
-            registered_traders.capacity() == registered_traders.len() && !is_fully_authorized;
+        let has_eviction_privileges =
+            registered_traders.capacity() == registered_traders.len();
 
         assert_with_msg(
             base_mint_ai.info.key == &base_mint,
@@ -135,7 +135,7 @@ pub fn process_evict_seat(program_id: &Pubkey, accounts: &[AccountInfo]) -> Prog
             base_mint,
             quote_mint,
             market_header.market_size_params,
-            has_partial_eviction_privileges,
+            has_eviction_privileges,
         )
     };
 
@@ -165,7 +165,7 @@ pub fn process_evict_seat(program_id: &Pubkey, accounts: &[AccountInfo]) -> Prog
                 && trader_state.base_lots_free == 0
                 && trader_state.quote_lots_free == 0;
 
-            let can_evict_trader = if has_partial_eviction_privileges || is_fully_authorized {
+            let can_evict_trader = if has_eviction_privileges || is_fully_authorized {
                 trader_state.base_lots_locked == 0 && trader_state.quote_lots_locked == 0
             } else {
                 seat_is_empty
